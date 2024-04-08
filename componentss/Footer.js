@@ -1,13 +1,29 @@
 import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import {useNavigation} from '@react-navigation/native';
-
+import DocumentPicker from 'react-native-document-picker';
+import {useGlobalState} from '../GlobalProvider';
 const Footer = () => {
+  const {globalState, setGlobalState} = useGlobalState();
   const navigation = useNavigation();
+  const pickImage = async () => {
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.images], // Specify the image type
+      });
+      navigation.navigate('Create', {res: res});
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        console.log('User cancelled the picker');
+      } else {
+        console.error('Error picking image:', err);
+      }
+    }
+  };
   return (
     <View style={styles.main}>
       <Pressable
-      onPress={()=>navigation.navigate('Feed')}
+        onPress={() => navigation.navigate('Feed')}
         style={[
           {
             flexDirection: 'column',
@@ -18,7 +34,6 @@ const Footer = () => {
           },
           styles.selected,
         ]}>
-          
         <Image
           source={require('../images/home.png')}
           style={{
@@ -30,7 +45,7 @@ const Footer = () => {
         <Text style={{color: 'black', fontSize: 12, marginTop: 3}}>Home</Text>
       </Pressable>
       <Pressable
-      onPress={()=>navigation.navigate('Explore')}
+        onPress={() => navigation.navigate('Explore')}
         style={{
           flexDirection: 'column',
           justifyContent: 'center',
@@ -51,7 +66,7 @@ const Footer = () => {
         </Text>
       </Pressable>
       <Pressable
-      onPress={()=>navigation.navigate('Create')}
+        onPress={() => pickImage()}
         style={{
           flexDirection: 'column',
           justifyContent: 'center',
@@ -70,7 +85,9 @@ const Footer = () => {
         <Text style={{color: 'black', fontSize: 12, marginTop: 3}}>Create</Text>
       </Pressable>
       <Pressable
-      onPress={()=>navigation.navigate('Profile')}
+        onPress={() =>
+          navigation.navigate('Profile', {userId: globalState?.userData?._id})
+        }
         style={{
           flexDirection: 'column',
           justifyContent: 'center',
@@ -84,11 +101,13 @@ const Footer = () => {
             width: 22,
             borderRadius: 11,
             padding: 2,
-            backgroundColor: 'red',
+            // backgroundColor: 'red',
           }}
-          source={{
-            uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-          }}
+          source={
+            globalState?.userData?.ProfilePic
+              ? {uri: globalState.userData.ProfilePic}
+              : require('../images/dummyUser.png')
+          }
         />
         <Text style={{color: 'black', fontSize: 12, marginTop: 3}}>
           Profile

@@ -14,10 +14,13 @@ import Footer from '../componentss/Footer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import {useGlobalState} from '../GlobalProvider';
-import {getUserDetails} from '../services/user.services';
-import { useFocusEffect } from '@react-navigation/native';
+import {getUserDetails, followRequest} from '../services/user.services';
+import {useFocusEffect} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 const Profile = () => {
+  const route = useRoute();
   const navigation = useNavigation();
+  const {userId} = route.params;
   const {globalState, setGlobalState} = useGlobalState();
   const [showSettingPop, setShowSettingPop] = useState(false);
   const handleLogout = async () => {
@@ -32,22 +35,33 @@ const Profile = () => {
   };
   const [userDetails, setUserDetails] = useState('');
   const fetchUser = async () => {
-    console.log('sdfkb');
     try {
-      let response = await getUserDetails(globalState.userData._id);
-      if (response?.data?.data?.message == 'User details retrieved successfully!') {
+      let response = await getUserDetails(userId);
+      if (
+        response?.data?.data?.message == 'User details retrieved successfully!'
+      ) {
         setUserDetails(response?.data?.data.data);
-        console.log(response?.data?.data.data)
       }
     } catch (error) {
-      console.log("Something went wrong")
+      console.log('Something went wrong');
     }
   };
   useFocusEffect(
     React.useCallback(() => {
       fetchUser();
-    }, [])
+    }, [userId]),
   );
+  const handleFollowRequest = async ()=>{
+    try {
+      let response = followRequest({
+        currentUser:globalState?.userData?._id,
+        requestUser:userId
+      })
+      console.log(response)
+    } catch (error) {
+      console.log(error.response)
+    }
+  }
   return (
     <>
       <LinearGradient
@@ -68,16 +82,18 @@ const Profile = () => {
               resizeMode: 'contain',
             }}
           />
-          <Pressable onPress={() => setShowSettingPop(true)}>
-            <Image
-              source={require('../images/menu.png')}
-              style={{
-                height: 20,
-                width: 25,
-                resizeMode: 'contain',
-              }}
-            />
-          </Pressable>
+          {globalState?.userData?._id == userId && (
+            <Pressable onPress={() => setShowSettingPop(true)}>
+              <Image
+                source={require('../images/menu.png')}
+                style={{
+                  height: 20,
+                  width: 25,
+                  resizeMode: 'contain',
+                }}
+              />
+            </Pressable>
+          )}
         </View>
         <ScrollView>
           <View
@@ -95,25 +111,28 @@ const Profile = () => {
                   borderColor: 'gray',
                   elevation: 1,
                 }}>
-                  {userDetails?.ProfilePic ? <Image
-                  style={{
-                    height: 80,
-                    width: 80,
-                    borderRadius: 40,
-                  }}
-                  source={{
-                    uri: userDetails?.ProfilePic,
-                  }}
-                />:<Image
-                style={{
-                  height: 80,
-                  width: 80,
-                  borderRadius: 40,
-                }}
-                source={require("../images/dummyUser.png")}
-              />}   
+                {userDetails?.ProfilePic ? (
+                  <Image
+                    style={{
+                      height: 80,
+                      width: 80,
+                      borderRadius: 40,
+                    }}
+                    source={{
+                      uri: userDetails?.ProfilePic,
+                    }}
+                  />
+                ) : (
+                  <Image
+                    style={{
+                      height: 80,
+                      width: 80,
+                      borderRadius: 40,
+                    }}
+                    source={require('../images/dummyUser.png')}
+                  />
+                )}
               </View>
-              {/* <Text style={{textAlign:"center", color:"black", fontSize:13, marginTop:3, fontWeight:"500"}}>Shubham</Text> */}
             </View>
             <View
               style={{
@@ -153,7 +172,7 @@ const Profile = () => {
                     marginBottom: -3,
                     fontSize: 18,
                   }}>
-                {userDetails?.Followers?.length}
+                  {userDetails?.Followers?.length}
                 </Text>
                 <Text style={{color: 'gray', fontWeight: '600', fontSize: 13}}>
                   followers
@@ -194,14 +213,14 @@ const Profile = () => {
               style={{
                 color: 'black',
                 fontWeight: '500',
-                fontFamily:"cursive",
+                fontFamily: 'cursive',
                 marginTop: -7,
                 marginBottom: 5,
               }}>
               Popularly known as {userDetails.UserName}
             </Text>
             <Text style={{color: 'black', fontSize: 12.5}}>
-             {userDetails.Bio}
+              {userDetails.Bio}
             </Text>
             <Text style={{color: 'navy', fontWeight: '500', fontSize: 12.5}}>
               {userDetails.Website}
@@ -214,23 +233,50 @@ const Profile = () => {
               marginVertical: 10,
               justifyContent: 'space-between',
             }}>
-            <Pressable
-              onPress={() => navigation.navigate('Edit Profile', {userDetails:userDetails})}
-              style={{
-                backgroundColor: 'whitesmoke',
-                elevation: 1,
-                width: '45%',
-                paddingVertical: 6,
-              }}>
-              <Text
+            {globalState?.userData?._id == userId ? (
+              <Pressable
+                onPress={() =>
+                  navigation.navigate('Edit Profile', {
+                    userDetails: userDetails,
+                  })
+                }
                 style={{
-                  color: 'black',
-                  fontWeight: '500',
-                  textAlign: 'center',
+                  backgroundColor: 'whitesmoke',
+                  elevation: 1,
+                  width: '45%',
+                  paddingVertical: 6,
                 }}>
-                Edit profile
-              </Text>
-            </Pressable>
+                <Text
+                  style={{
+                    color: 'black',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                  }}>
+                  Edit profile
+                </Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={handleFollowRequest}
+                style={{
+                  backgroundColor: 'whitesmoke',
+                  elevation: 1,
+                  width: '45%',
+                  paddingVertical: 6,
+                }}>
+                <Text
+                  style={{
+                    color: 'black',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                  }}>
+                  {globalState?.userData?.Followings?.includes(userId)
+                    ? 'Following'
+                    : 'Follow'}
+                </Text>
+              </Pressable>
+            )}
+
             <Pressable
               style={{
                 backgroundColor: 'whitesmoke',

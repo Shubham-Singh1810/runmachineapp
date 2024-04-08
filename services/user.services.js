@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Define your API base URL
-const BASE_URL = 'http://192.168.1.5:3005/api/';
+// const BASE_URL = 'http://192.168.1.5:3005/api/';
+const BASE_URL = 'http://192.168.32.192:3005/api/';
 
 // Function for login
 export const login = async formData => {
@@ -79,3 +80,60 @@ export const getUserDetails = async id => {
   }
 };
 
+// Function for getting feed 
+export const getMyFeed = async id => {
+  try {
+    const response = await axios.post(BASE_URL + 'post/myfeed', {
+      userId:id
+    });
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+
+export const getSuggestedUser = async id => {
+  try {
+    const response = await axios.get(BASE_URL + 'user/suggested/account/'+id);
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+export const save_unsave_post = async (postId, currentUser) => {
+  try {
+    const response = await axios.post(BASE_URL + 'post/save/'+postId, {currentUser});
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+export const like_unlike_post = async (postId, currentUser) => {
+  try {
+    const response = await axios.post(BASE_URL + 'post/likes/'+postId, {currentUser});
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+export const followRequest = async (formData) => {
+  console.log(formData)
+  try {
+    const response = await axios.post(BASE_URL + 'user/follow', formData);
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};

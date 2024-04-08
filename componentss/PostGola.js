@@ -1,13 +1,88 @@
-import {StyleSheet, Image, Text, View, Pressable, Modal} from 'react-native';
-import React,{useState} from 'react';
+import {
+  StyleSheet,
+  Image,
+  Text,
+  View,
+  Pressable,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
+import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
-const PostGola = () => {
+import {save_unsave_post, like_unlike_post} from '../services/user.services';
+import {useGlobalState} from '../GlobalProvider';
+import ToastManager, {Toast} from 'toastify-react-native';
+import {getPostById} from '../services/post.services';
+const PostGola = ({postValue}) => {
+  const [value, setValue] = useState(postValue);
+  const {globalState, setGlobalState} = useGlobalState();
+  const [showLoader, setShowLoader] = useState(false);
+  const [message, setMessage] = useState({
+    text: '',
+    show: false,
+    color: '',
+  });
+  const handleSave = async () => {
+    setShowLoader(true);
+    try {
+      let response = await save_unsave_post(
+        value?._id,
+        globalState?.userData?._id,
+      );
+      if (response?.data?.status?.code == 200) {
+        setShowLoader(false);
+        setTimeout(() => {
+          setMessage({
+            text: response?.data?.data?.message,
+            show: true,
+            color: 'green',
+          });
+        }, 1000);
+        setTimeout(() => {
+          setMessage({
+            text: '',
+            show: false,
+            color: 'green',
+          });
+        }, 6000);
+        getPostData()
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleLike = async () => {
+    setShowLoader(true);
+    try {
+      let response = await like_unlike_post(
+        value?._id,
+        globalState?.userData?._id,
+      );
+      if (response?.data?.status?.code == 200) {
+        setShowLoader(false);
+        getPostData();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const navigation = useNavigation();
-  const [showActionPopUp, setShowActionPopUp]=useState(false)
+  const [showActionPopUp, setShowActionPopUp] = useState(false);
+  const getPostData = async () => {
+    try {
+      let response = await getPostById(value?._id);
+      setValue(response?.data?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <View>
-      <View
+      <Pressable
+        onPress={() =>
+          navigation.navigate('Profile', {userId: value?.Author?._id})
+        }
         style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
@@ -20,68 +95,130 @@ const PostGola = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-          <Image
-            source={{
-              uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-            }}
-            style={{
-              width: 40,
-              borderRadius: 20,
-              height: 40,
-              resizeMode: 'cover',
-            }}
-          />
+          {value?.Author?.ProfilePic ? (
+            <Image
+              source={{
+                uri: value?.Author?.ProfilePic,
+              }}
+              style={{
+                width: 40,
+                borderRadius: 20,
+                height: 40,
+                resizeMode: 'cover',
+              }}
+            />
+          ) : (
+            <Image
+              source={require('../images/dummyUser.png')}
+              style={{
+                width: 40,
+                borderRadius: 20,
+                height: 40,
+                resizeMode: 'cover',
+              }}
+            />
+          )}
+
           <View style={{marginLeft: 10}}>
             <Text style={{color: 'black', fontSize: 14, fontWeight: '500'}}>
-              Shubham Singh
+              {value?.Author.FullName}
             </Text>
-            <Text style={{color: 'gray', fontSize: 12}}>718 followers</Text>
+            <Text style={{color: 'gray', fontSize: 12}}>
+              {value?.Author?.Followers?.length} followers
+            </Text>
           </View>
         </View>
-        <Pressable>
-          <Text style={{color: 'blue', fontWeight: '500'}}>Follow</Text>
-        </Pressable>
-      </View>
+        {globalState?.userData?._id != value?.Author?._id && (
+          <View>
+            <Text style={{color: 'blue', fontWeight: '500'}}>
+              {globalState?.userData?.Followings?.includes(value?.Author?._id)
+                ? 'Following'
+                : 'Follow'}
+            </Text>
+          </View>
+        )}
+      </Pressable>
       <View
       //  colors={['#fff', '#f4f8fc', '#b5d5fc', '#eef4fe']}
       >
-        <Pressable style={{position: 'absolute', zIndex: 1, right: 15, top: 5}} onPress={()=>setShowActionPopUp(true)}>
+        <Pressable
+          style={{position: 'absolute', zIndex: 1, right: 15, top: 5}}
+          onPress={() => setShowActionPopUp(true)}>
           <Text style={{fontWeight: '900', color: 'black'}}>. . .</Text>
         </Pressable>
 
         <Image
           source={{
-            uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
+            uri: value?.ImgUrl,
           }}
           style={{width: '100%', aspectRatio: 4 / 3}}
         />
       </View>
       <View style={{padding: 10}}>
+        {message.show && (
+          <View
+            style={{
+              top: -20,
+              width: '110%',
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              position: 'absolute',
+              backgroundColor: 'white',
+              zIndex: 1,
+            }}>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontSize: 13,
+                color: message.color,
+                fontWeight: '500',
+              }}>
+              {message?.text}
+            </Text>
+          </View>
+        )}
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
           <View style={{flexDirection: 'row'}}>
-            <Image
-              source={require("../images/heart.png")}
-              style={{
-                width: 25,
-                height: 25,
-                resizeMode: 'cover',
-                marginRight: 20,
-              }}
-            />
-            <Pressable onPress={()=>navigation.navigate('Comments')}>
-            <Image
-              source={require("../images/chat.png")}
-              style={{
-                width: 28.5,
-                height: 28.5,
-                resizeMode: 'cover',
-                marginRight: 20,
-                marginTop:-2
-              }}
-            />
+            <Pressable onPress={handleLike}>
+              {value?.Likes.includes(globalState?.userData?._id) ? (
+                <Image
+                  source={require('../images/redHeart.png')}
+                  style={{
+                    width: 25,
+                    height: 25,
+                    resizeMode: 'cover',
+                    marginRight: 20,
+                  }}
+                />
+              ) : (
+                <Image
+                  source={require('../images/heart.png')}
+                  style={{
+                    width: 25,
+                    height: 25,
+                    resizeMode: 'cover',
+                    marginRight: 20,
+                  }}
+                />
+              )}
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                navigation.navigate('Comments', {postId: value?._id})
+              }>
+              <Image
+                source={require('../images/chat.png')}
+                style={{
+                  width: 28.5,
+                  height: 28.5,
+                  resizeMode: 'cover',
+                  marginRight: 20,
+                  marginTop: -2,
+                }}
+              />
             </Pressable>
             <Image
-              source={require("../images/send.png")}
+              source={require('../images/send.png')}
               style={{
                 width: 23,
                 height: 23,
@@ -90,44 +227,64 @@ const PostGola = () => {
               }}
             />
           </View>
-          <View>
-          <Image
-              source={require("../images/saveIcon.png")}
-              style={{
-                width: 21,
-                height: 21,
-                resizeMode: 'cover',
-                // marginRight: 20,
-              }}
-            />
-          </View>
+          <Pressable onPress={handleSave}>
+            {value?.SavedBy.includes(globalState?.userData?._id) ? (
+              <Image
+                source={require('../images/bookmark.png')}
+                style={{
+                  width: 21,
+                  height: 21,
+                  resizeMode: 'cover',
+                }}
+              />
+            ) : (
+              <Image
+                source={require('../images/saveIcon.png')}
+                style={{
+                  width: 21,
+                  height: 21,
+                  resizeMode: 'cover',
+                  // marginRight: 20,
+                }}
+              />
+            )}
+          </Pressable>
         </View>
         <View style={{margin: 5}}>
-          <Text style={{color: 'black'}}>2,356 likes</Text>
+          <Text style={{color: 'black'}}>{value?.Likes?.length} likes</Text>
           <View style={{flexDirection: 'row'}}>
             <Text style={{color: 'black', fontWeight: '500'}}>
               Shubham_Singh
             </Text>
             <Text style={{color: 'black', fontWeight: '400', marginLeft: 5}}>
-              This is my first post
+              {value?.Caption}
             </Text>
           </View>
-          <Pressable>
-            <Text>View all 3 comments</Text>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('Comments', {postId: value?._id})
+            }>
+            {value?.Commnets?.length == 0 ? (
+              <Text>Be the first to leave a comment</Text>
+            ) : (
+              <Text>View all {value?.Commnets?.length} comments</Text>
+            )}
           </Pressable>
         </View>
       </View>
       {/* action Modal popup */}
       <Modal visible={showActionPopUp} transparent={true} animationType="slide">
-        <Pressable onPress={()=>setShowActionPopUp(false)} style={{flexDirection: 'row', alignItems: 'flex-end', flex: 1}}>
+        <Pressable
+          onPress={() => setShowActionPopUp(false)}
+          style={{flexDirection: 'row', alignItems: 'flex-end', flex: 1}}>
           <Pressable
-          onPress={()=>setShowActionPopUp(true)}
+            onPress={() => setShowActionPopUp(true)}
             style={{
               width: '100%',
               backgroundColor: 'white',
-              padding: 30,
-              borderTopLeftRadius: 30,
-              borderTopRightRadius: 30,
+              padding: 20,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
               elevation: 10,
               paddingTop: 0,
             }}>
@@ -146,45 +303,54 @@ const PostGola = () => {
                   backgroundColor: 'gray',
                 }}></Pressable>
             </View>
-            <View
+            {message.show && (
+              <Text
+                style={{
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  fontSize: 13,
+                  color: message.color,
+                  fontWeight: '500',
+                }}>
+                {message?.text}
+              </Text>
+            )}
+            <Pressable
+              onPress={handleSave}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 20,
+                marginBottom: 17,
               }}>
               <Image
-                source={{
-                  uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-                }}
+                source={require('../images/saveIcon.png')}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: 20,
+                  height: 20,
                   marginRight: 10,
                   resizeMode: 'cover',
                 }}
               />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 18}}>
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
                 Save
               </Text>
-            </View>
+            </Pressable>
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 20,
+                marginBottom: 17,
               }}>
               <Image
-                source={{
-                  uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-                }}
+                source={require('../images/send.png')}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: 20,
+                  height: 20,
                   marginRight: 10,
                   resizeMode: 'cover',
                 }}
               />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 18}}>
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
                 Share
               </Text>
             </View>
@@ -192,20 +358,18 @@ const PostGola = () => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 20,
+                marginBottom: 17,
               }}>
               <Image
-                source={{
-                  uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-                }}
+                source={require('../images/add.png')}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: 20,
+                  height: 20,
                   marginRight: 10,
                   resizeMode: 'cover',
                 }}
               />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 18}}>
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
                 Follow
               </Text>
             </View>
@@ -213,20 +377,18 @@ const PostGola = () => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 20,
+                marginBottom: 17,
               }}>
               <Image
-                source={{
-                  uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-                }}
+                source={require('../images/information.png')}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: 20,
+                  height: 20,
                   marginRight: 10,
                   resizeMode: 'cover',
                 }}
               />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 18}}>
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
                 About this account
               </Text>
             </View>
@@ -234,25 +396,54 @@ const PostGola = () => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 20,
+                marginBottom: 17,
               }}>
               <Image
-                source={{
-                  uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-                }}
+                source={require('../images/circle.png')}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: 20,
+                  height: 20,
                   marginRight: 10,
                   resizeMode: 'cover',
                 }}
               />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 18}}>
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
                 Report
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 17,
+              }}>
+              <Image
+                source={require('../images/delete.png')}
+                style={{
+                  width: 20,
+                  height: 20,
+                  marginRight: 10,
+                  resizeMode: 'cover',
+                }}
+              />
+              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
+                Delete
               </Text>
             </View>
           </Pressable>
         </Pressable>
+      </Modal>
+      <Modal visible={showLoader} transparent={true} animationType="slide">
+        <View
+          style={{
+            flex: 1,
+            // backgroundColor: 'rgba(0,0,0,0.3)',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          {/* <ActivityIndicator size="large" /> */}
+        </View>
       </Modal>
     </View>
   );

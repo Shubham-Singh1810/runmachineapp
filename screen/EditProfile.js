@@ -17,8 +17,6 @@ import {editProfile} from '../services/user.services';
 import {useGlobalState} from '../GlobalProvider';
 import ToastManager, {Toast} from 'toastify-react-native';
 import {useNavigation} from '@react-navigation/native';
-
-
 import { useRoute } from '@react-navigation/native';
 const EditProfile = () => {
   const route = useRoute();
@@ -70,7 +68,7 @@ const EditProfile = () => {
         setLoader(false)
         Toast.success('Users updated successfully!');
         setTimeout(()=>{
-          navigation.navigate('Profile')
+          navigation.navigate('Profile', {userId: globalState?.userData?._id})
         },1000)
       } else {
         setLoader(false)
@@ -120,6 +118,7 @@ const EditProfile = () => {
             placeholder=""
             onChangeText={text => setFormData({...formData, UserName: text})}
             value={formData.UserName}
+           
           />
         </View>
         <View style={{marginBottom: 35}}>
@@ -129,6 +128,7 @@ const EditProfile = () => {
             placeholder=""
             multiline={true} // Allow multiple lines
             numberOfLines={3}
+            textAlignVertical="top"
             onChangeText={text => setFormData({...formData, Bio: text})}
             value={formData.Bio}
           />

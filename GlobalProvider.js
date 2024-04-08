@@ -11,6 +11,7 @@ export const GlobalStateProvider = ({children}) => {
       let localUser = await AsyncStorage.getItem('userData');
       let token = await AsyncStorage.getItem('token')
       setGlobalState({...globalState, userData: JSON.parse(localUser)});
+      setGlobalState({...globalState, savedPost: JSON.parse(localUser).SavedPost});
       setGlobalState({...globalState, token: JSON.parse(token)});
     } catch (error) {
       console.warn('error from global provider');
@@ -19,7 +20,8 @@ export const GlobalStateProvider = ({children}) => {
 
   const [globalState, setGlobalState] = useState({
     userData: null,
-    token:null
+    token:null,
+    SavedPost:[]
   });
   
   useEffect(() => {
