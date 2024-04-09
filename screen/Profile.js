@@ -7,6 +7,7 @@ import {
   Button,
   Pressable,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
@@ -15,14 +16,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import {useGlobalState} from '../GlobalProvider';
 import {getUserDetails, followRequest} from '../services/user.services';
+import {getPostByFilter} from '../services/post.services';
 import {useFocusEffect} from '@react-navigation/native';
 import {useRoute} from '@react-navigation/native';
+import PostGola from '../componentss/PostGola';
 const Profile = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const {userId} = route.params;
   const {globalState, setGlobalState} = useGlobalState();
   const [showSettingPop, setShowSettingPop] = useState(false);
+  const [screenType, setScreenType] = useState(
+    globalState?.userData?._id == userId ? 'flex' : 'horizontal',
+  );
+  const [showLoader, setShowLoader] = useState(false);
   const handleLogout = async () => {
     try {
       await AsyncStorage.clear();
@@ -40,28 +47,51 @@ const Profile = () => {
       if (
         response?.data?.data?.message == 'User details retrieved successfully!'
       ) {
-        setUserDetails(response?.data?.data.data);
+        setUserDetails(response?.data?.data?.data);
+        // console.log(response?.data?.data?.data);
       }
     } catch (error) {
       console.log('Something went wrong');
     }
   };
+  const [myPostsList, setPostsList] = useState([]);
+  const [query, setQuery] = useState({Author: userId});
+  const getMyPost = async userId => {
+    try {
+      let response = await getPostByFilter(query);
+      setPostsList(response?.data?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useFocusEffect(
     React.useCallback(() => {
       fetchUser();
+      getMyPost(userId);
     }, [userId]),
   );
-  const handleFollowRequest = async ()=>{
+  useFocusEffect(
+    React.useCallback(() => {
+      getMyPost(userId);
+    }, [query]),
+  );
+  const handleFollowRequest = async () => {
+    // setShowLoader(true)
     try {
-      let response = followRequest({
-        currentUser:globalState?.userData?._id,
-        requestUser:userId
-      })
-      console.log(response)
+      let response = await followRequest({
+        currentUser: globalState?.userData?._id,
+        requestUser: userId,
+      });
+      if (response?.data?.status?.code == 200) {
+        setShowLoader(false);
+        fetchUser();
+      }
     } catch (error) {
-      console.log(error.response)
+      console.log(error.response);
+      setShowLoader(false);
     }
-  }
+  };
+
   return (
     <>
       <LinearGradient
@@ -270,7 +300,10 @@ const Profile = () => {
                     fontWeight: '500',
                     textAlign: 'center',
                   }}>
-                  {globalState?.userData?.Followings?.includes(userId)
+                  {/* {globalState?.userData?.Followings?.includes(userId)
+                    ? 'Following'
+                    : 'Follow'} */}
+                  {userDetails?.Followers?.includes(globalState?.userData?._id)
                     ? 'Following'
                     : 'Follow'}
                 </Text>
@@ -294,7 +327,7 @@ const Profile = () => {
               </Text>
             </Pressable>
           </View>
-          <Text style={{marginLeft: 15, fontWeight: '600'}}>
+          {/* <Text style={{marginLeft: 15, fontWeight: '600'}}>
             Story Highlights
           </Text>
           <ScrollView horizontal={true} style={{margin: 10}}>
@@ -388,151 +421,120 @@ const Profile = () => {
                 }}
               />
             </View>
-          </ScrollView>
-          <View
-            style={{
-              justifyContent: 'space-around',
-              marginTop: 10,
-              flexDirection: 'row',
-            }}>
-            <Pressable
-              style={
-                true && {
-                  borderWidth: 1,
-                  borderRadius: 5,
-                  padding: 2,
-                  borderColor: 'gray',
-                }
-              }>
-              <Image
-                source={require('../images/squareMenu.png')}
-                style={{width: 20, height: 20, resizeMode: 'contain'}}
-              />
-            </Pressable>
-            <Pressable
-              style={
-                false && {
-                  borderWidth: 1,
-                  borderRadius: 5,
-                  padding: 2,
-                  borderColor: 'gray',
-                }
-              }>
-              <Image
-                source={require('../images/list.png')}
-                style={{width: 20, height: 20, resizeMode: 'contain'}}
-              />
-            </Pressable>
-            <Pressable
-              style={
-                false && {
-                  borderWidth: 1,
-                  borderRadius: 5,
-                  padding: 2,
-                  borderColor: 'gray',
-                }
-              }>
-              <Image
-                source={require('../images/saveIcon.png')}
-                style={{
-                  width: 20,
-                  height: 18,
-                  marginTop: 2,
-                  resizeMode: 'contain',
-                }}
-              />
-            </Pressable>
-          </View>
-          <ScrollView style={{marginTop: 15}}>
+          </ScrollView> */}
+
+          {globalState?.userData?._id == userId && (
             <View
-              style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
+              style={{
+                justifyContent: 'space-around',
+                marginTop: 10,
+                flexDirection: 'row',
+              }}>
+              <Pressable
+                onPress={() => setScreenType('flex')}
+                style={
+                  screenType == 'flex' && {
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    padding: 2,
+                    borderColor: 'gray',
+                  }
+                }>
+                <Image
+                  source={require('../images/squareMenu.png')}
+                  style={{width: 20, height: 20, resizeMode: 'contain'}}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => setScreenType('horizontal')}
+                style={
+                  screenType == 'horizontal' && {
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    padding: 2,
+                    borderColor: 'gray',
+                  }
+                }>
+                <Image
+                  source={require('../images/list.png')}
+                  style={{width: 20, height: 20, resizeMode: 'contain'}}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setQuery({SavedBy: globalState?.userData?._id}),
+                    setScreenType('saved');
+                }}>
+                {screenType == 'saved' ? (
+                  <Image
+                    source={require('../images/bookmark.png')}
+                    style={{
+                      width: 20,
+                      height: 18,
+                      marginTop: 2,
+                      resizeMode: 'contain',
+                    }}
+                  />
+                ) : (
+                  <Image
+                    source={require('../images/saveIcon.png')}
+                    style={{
+                      width: 20,
+                      height: 18,
+                      marginTop: 2,
+                      resizeMode: 'contain',
+                    }}
+                  />
+                )}
+              </Pressable>
             </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-            </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-            </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-              <Image
-                style={{height: 120, width: '33%', backgroundColor: 'red'}}
-                source={{
-                  uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
-                }}
-              />
-            </View>
-          </ScrollView>
+          )}
+          {screenType == 'flex' && globalState?.userData?._id == userId && (
+            <ScrollView style={{marginTop: 15}}>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+                {myPostsList?.map((v, i) => {
+                  return (
+                    <Pressable
+                      style={{
+                        height: 120,
+                        width: '33%',
+                        backgroundColor: 'red',
+                      }}
+                      onPress={() => setScreenType('horizontal')}>
+                      <Image
+                        style={{
+                          height: 120,
+                          width: '100%',
+                          backgroundColor: 'red',
+                        }}
+                        source={{
+                          uri: v?.ImgUrl,
+                        }}
+                      />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          )}
+          {screenType == 'horizontal' && (
+            <ScrollView>
+              {myPostsList?.map((v, i) => {
+                return <PostGola postValue={v} />;
+              })}
+            </ScrollView>
+          )}
+          {screenType == 'saved' && (
+            <ScrollView>
+              {myPostsList?.map((v, i) => {
+                return <PostGola postValue={v} />;
+              })}
+            </ScrollView>
+          )}
         </ScrollView>
       </LinearGradient>
-      <Footer />
-      <Modal visible={showSettingPop} transparent={true} animationType="slide">
+      <Footer userId={userId}/>
+      <Modal visible={showSettingPop} transparent={true} animationType="fade">
         <Pressable
           onPress={() => setShowSettingPop(false)}
           style={{
@@ -558,7 +560,7 @@ const Profile = () => {
                 justifyContent: 'space-between',
               }}>
               <Text style={{fontSize: 18, color: 'black', fontWeight: '500'}}>
-                Shubham Singh
+                {globalState?.userData?.FullName}
               </Text>
               <Pressable onPress={() => setShowSettingPop(false)}>
                 <Image
@@ -568,7 +570,13 @@ const Profile = () => {
               </Pressable>
             </View>
 
-            <View style={{paddingHorizontal: 10, paddingVertical: 20}}>
+            <View
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 20,
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                flex: 1,
+              }}>
               <View
                 style={{
                   flexDirection: 'row',
@@ -626,7 +634,6 @@ const Profile = () => {
                   Notifications
                 </Text>
               </View>
-
               <View
                 style={{
                   flexDirection: 'row',
@@ -684,6 +691,7 @@ const Profile = () => {
                   Booked
                 </Text>
               </View>
+
               <View
                 style={{
                   flexDirection: 'row',
@@ -760,13 +768,22 @@ const Profile = () => {
                   Share
                 </Text>
               </View>
+              <Text
+                style={{
+                  color: 'green',
+                  fontSize: 18,
+                  fontWeight: '600',
+                  marginTop: 50,
+                }}>
+                Work in progress
+              </Text>
             </View>
             <Pressable
               onPress={() => handleLogout()}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 8,
+                // marginBottom: 8,
                 position: 'absolute',
                 bottom: 0,
                 padding: 10,
@@ -774,6 +791,8 @@ const Profile = () => {
                 borderColor: 'gray',
                 borderStyle: 'dotted',
                 width: '100%',
+                backgroundColor: 'white',
+                paddingBottom: 18,
               }}>
               <Image
                 source={require('../images/power-off.png')}
@@ -790,6 +809,17 @@ const Profile = () => {
             </Pressable>
           </Pressable>
         </Pressable>
+      </Modal>
+      <Modal transparent={true} visible={showLoader} animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.3)',
+          }}>
+          <ActivityIndicator size="large" color="gray" />
+        </View>
       </Modal>
     </>
   );

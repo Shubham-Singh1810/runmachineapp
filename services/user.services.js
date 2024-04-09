@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Define your API base URL
-// const BASE_URL = 'http://192.168.1.5:3005/api/';
 const BASE_URL = 'http://192.168.32.192:3005/api/';
+// const BASE_URL = 'https://runmachineserver.onrender.com/api/';
 
 // Function for login
 export const login = async formData => {
@@ -127,9 +127,20 @@ export const like_unlike_post = async (postId, currentUser) => {
   }
 };
 export const followRequest = async (formData) => {
-  console.log(formData)
   try {
     const response = await axios.post(BASE_URL + 'user/follow', formData);
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+export const searchUser = async (searchKey) => {
+  console.log(searchKey)
+  try {
+    const response = await axios.post(BASE_URL + 'user/searchUser', {searchKey});
     return response;
   } catch (error) {
     // Handle error (e.g., log or throw an error)

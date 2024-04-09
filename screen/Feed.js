@@ -1,4 +1,15 @@
-import {ScrollView, StyleSheet, Image, Text, View, ActivityIndicator, Modal} from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Image,
+  Text,
+  View,
+  ActivityIndicator,
+  Modal,
+  Alert,
+  RefreshControl,
+  Pressable,
+} from 'react-native';
 import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import StoryGola from '../componentss/StoryGola';
@@ -9,25 +20,31 @@ import {useFocusEffect} from '@react-navigation/native';
 import {getMyFeed} from '../services/user.services';
 import {useGlobalState} from '../GlobalProvider';
 const Feed = () => {
+  const [refreshing, setRefreshing] = useState(false);
   const [postDataArr, setPostDataArr] = useState([]);
-  const [showLoader, setShowLoader]=useState(false)
+  const [showLoader, setShowLoader] = useState(false);
   const {globalState, setGlobalState} = useGlobalState();
   const handleGetMyPost = async () => {
-    setShowLoader(true)
+    setShowLoader(true);
     try {
       let response = await getMyFeed(globalState?.userData?._id);
       setPostDataArr(response?.data?.data?.data);
-      setShowLoader(false)
+      setShowLoader(false);
     } catch (error) {
       console.log(error);
     }
+  };
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await handleGetMyPost(); // Call your fetch function again
+    setRefreshing(false);
   };
   useFocusEffect(
     React.useCallback(() => {
       handleGetMyPost();
     }, []),
   );
-  let randomNumber = Math.round(Math.random()*20);
+  let randomNumber = Math.round(Math.random() * 20);
   return (
     <>
       <View style={styles.main}>
@@ -49,7 +66,7 @@ const Feed = () => {
                 resizeMode: 'contain',
               }}
             />
-            <View>
+            <Pressable onPress={()=>Alert.alert("Feature under development. Stay tuned for updates.")}>
               <Image
                 source={require('../images/redHeart.png')}
                 style={{height: 22, width: 22, resizeMode: 'contain'}}
@@ -67,14 +84,17 @@ const Feed = () => {
                   width: 13,
                   borderRadius: 7,
                 }}>
-                <Text style={{color: 'black', fontSize: 10}}>3</Text>
+                <Text style={{color: 'black', fontSize: 10}}>0</Text>
               </View>
-            </View>
+            </Pressable>
           </View>
 
-          <ScrollView>
+          <ScrollView
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }>
             <View>
-              <ScrollView horizontal={true}>
+              {/* <ScrollView horizontal={true}>
                 <StoryGola />
                 <StoryGola />
                 <StoryGola />
@@ -83,7 +103,7 @@ const Feed = () => {
                 <StoryGola />
                 <StoryGola />
                 <StoryGola />
-              </ScrollView>
+              </ScrollView> */}
             </View>
             {postDataArr?.slice(0, randomNumber).map((v, i) => {
               return <PostGola postValue={v} />;

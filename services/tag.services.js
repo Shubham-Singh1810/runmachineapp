@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Define your API base URL
-// const BASE_URL = 'http://192.168.1.5:3005/api/';
 const BASE_URL = 'http://192.168.32.192:3005/api/';
+// const BASE_URL = 'https://runmachineserver.onrender.com/api/';
 
 // Function for login
 export const createTag = async formData => {
@@ -19,7 +19,7 @@ export const createTag = async formData => {
 // Function for signup
 export const getTagList = async () => {
   try {
-    const response = await axios.get(BASE_URL + 'post/getTag');
+    const response = await axios.get(BASE_URL + 'tag/getTag');
     return response;
   } catch (error) {
     // Handle error (e.g., log or throw an error)

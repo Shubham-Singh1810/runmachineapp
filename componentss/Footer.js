@@ -3,9 +3,13 @@ import React from 'react';
 import {useNavigation} from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
 import {useGlobalState} from '../GlobalProvider';
-const Footer = () => {
+import { useRoute } from '@react-navigation/native';
+const Footer = ({userId}) => {
+  console.log(userId)
   const {globalState, setGlobalState} = useGlobalState();
   const navigation = useNavigation();
+  const route = useRoute();
+  const currentScreenName = route.name;
   const pickImage = async () => {
     try {
       const res = await DocumentPicker.pick({
@@ -32,27 +36,28 @@ const Footer = () => {
             paddingVertical: 10,
             alignItems: 'center',
           },
-          styles.selected,
+          currentScreenName=="Feed" && styles.selected
         ]}>
         <Image
           source={require('../images/home.png')}
-          style={{
+          style={
+            [{
             width: 20,
             height: 20,
             resizeMode: 'cover',
-          }}
+          }]}
         />
         <Text style={{color: 'black', fontSize: 12, marginTop: 3}}>Home</Text>
       </Pressable>
       <Pressable
         onPress={() => navigation.navigate('Explore')}
-        style={{
+        style={[{
           flexDirection: 'column',
           justifyContent: 'center',
           paddingHorizontal: 15,
           paddingVertical: 10,
           alignItems: 'center',
-        }}>
+        }, currentScreenName=="Explore" && styles.selected]}>
         <Image
           source={require('../images/searchIcon.png')}
           style={{
@@ -67,13 +72,13 @@ const Footer = () => {
       </Pressable>
       <Pressable
         onPress={() => pickImage()}
-        style={{
+        style={[{
           flexDirection: 'column',
           justifyContent: 'center',
           paddingHorizontal: 15,
           paddingVertical: 10,
           alignItems: 'center',
-        }}>
+        }, currentScreenName=="Create" && styles.selected]}>
         <Image
           source={require('../images/tab.png')}
           style={{
@@ -88,13 +93,13 @@ const Footer = () => {
         onPress={() =>
           navigation.navigate('Profile', {userId: globalState?.userData?._id})
         }
-        style={{
+        style={[{
           flexDirection: 'column',
           justifyContent: 'center',
           paddingHorizontal: 15,
           paddingVertical: 10,
           alignItems: 'center',
-        }}>
+        }, currentScreenName=="Profile" && globalState?.userData?._id == userId  && styles.selected]}>
         <Image
           style={{
             height: 22,

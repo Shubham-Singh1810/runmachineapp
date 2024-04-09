@@ -1,7 +1,10 @@
 import {StyleSheet, Text, Image, View, Pressable} from 'react-native';
 import React from 'react';
-
+import {useNavigation} from '@react-navigation/native';
+import {useGlobalState} from '../GlobalProvider';
 const UserSuggestionGola = ({value}) => {
+  const {globalState, setGlobalState} = useGlobalState();
+  const navigation = useNavigation();
   return (
     <View
       style={{
@@ -48,6 +51,9 @@ const UserSuggestionGola = ({value}) => {
             : value?.FullName}
         </Text>
         <Pressable
+        onPress={() =>
+          navigation.navigate('Profile', {userId: value?._id})
+        }
           style={{
             backgroundColor: '#becce5',
             flexDirection: 'row',
@@ -55,7 +61,11 @@ const UserSuggestionGola = ({value}) => {
             justifyContent: 'center',
             paddingVertical: 2,
           }}>
-          <Text style={{color: 'black', fontWeight: '500'}}>Follow</Text>
+          <Text style={{color: 'black', fontWeight: '500'}}>
+          {globalState?.userData?.Followings?.includes(value?.Author?._id)
+                ? 'Following'
+                : 'Follow'}
+          </Text>
         </Pressable>
       </View>
     </View>

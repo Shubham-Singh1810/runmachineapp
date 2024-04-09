@@ -7,21 +7,48 @@ import {
   View,
 } from 'react-native';
 import React,{useState} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
 import PostGola from './PostGola';
 import MiniPostGola from './MiniPostGola';
-
+import {getTagList} from '../services/tag.services';
+import {getPostByFilter} from '../services/post.services';
 const PostByTag = () => {
-    const [showMiniPost, setShowMiniPost] = useState(true);
-  const tagArr = [
-    'food',
-    'gym',
-    'travel',
-    'news',
-    'code',
-    'fassion',
-    'politics',
-  ];
-  const [showTagList, setShowTagList]=useState(false)
+  const [showMiniPost, setShowMiniPost] = useState(true);
+  const [tagArr, setTagArr] = useState([]);
+  const [showTagList, setShowTagList]=useState(false);
+  const [postsList, setPostsList] = useState([]);
+  const [selectedTag, setSelectedTag] = useState('');
+  const getMyPost = async query => {
+    try {
+      let response = await getPostByFilter(query);
+      setPostsList(response?.data?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleGetTagList = async () => {
+    try {
+      let response = await getTagList();
+      if (
+        response?.data?.data?.message == 'Tag list retrieved successfully!'
+      ) {
+        let tagArr = response?.data?.data.data?.map(item => ({
+          label: item.Tag,
+          value: item._id,
+        }));
+        setTagArr(tagArr);
+        getMyPost({TagId: tagArr[0].value});
+        setSelectedTag(tagArr[0].label);
+      }
+    } catch (error) {
+      console.log('Something went wrong');
+    }
+  };
+  useFocusEffect(
+    React.useCallback(() => {
+      handleGetTagList();
+    }, []),
+  );
   return (
     <View style={{marginBottom:20}}>
       <View
@@ -48,7 +75,7 @@ const PostByTag = () => {
               marginLeft: 3,
               borderRadius: 3,
             }}>
-            #food
+            #{selectedTag}
           </Text>
         </View>
         <Pressable onPress={()=>setShowTagList(!showTagList)} style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -69,7 +96,11 @@ const PostByTag = () => {
         }}>
         {tagArr?.map((v, i) => {
           return (
-            <Text
+            <Pressable
+                onPress={() => {
+                  getMyPost({TagId: v?.value}), setSelectedTag(v?.label);
+                }}>
+                   <Text
               style={{
                 backgroundColor: '#becce5',
                 color: 'black',
@@ -79,8 +110,10 @@ const PostByTag = () => {
                 borderRadius: 3,
                 fontWeight: '500',
               }}>
-              #{v}
+              #{v?.label}
             </Text>
+                </Pressable>
+           
           );
         })}
       </View>}
@@ -88,21 +121,15 @@ const PostByTag = () => {
 
       {showMiniPost ? (
         <ScrollView horizontal={true} style={{marginLeft: 16}}>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
-          <MiniPostGola setShowMiniPost={setShowMiniPost}/>
+          {postsList?.map((v, i) => {
+            return <MiniPostGola setShowMiniPost={setShowMiniPost} value={v} />;
+          })}
         </ScrollView>
       ) : (
         <ScrollView>
-          <PostGola />
-          <PostGola />
-          <PostGola />
-          <PostGola />
-          <PostGola />
-          <PostGola />
+           {postsList?.map((v, i) => {
+            return <PostGola postValue={v}/>;
+          })}
         </ScrollView>
       )}
     </View>

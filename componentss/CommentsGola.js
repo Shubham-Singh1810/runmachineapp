@@ -9,10 +9,22 @@ import {
   Modal,
 } from 'react-native';
 import React, {useState} from 'react';
-
-const CommentsGola = () => {
+import {likeComment} from "../services/comment.services"
+import {useGlobalState} from '../GlobalProvider';
+const CommentsGola = ({value, handleGetCommentList}) => {
+  console.log(value)
+  const {globalState, setGlobalState} = useGlobalState();
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
+  const handleCommentLike = async ()=>{
+    try {
+      let response = await likeComment(value?._id, globalState?.userData?._id);
+      console.log(response)
+      handleGetCommentList()
+    } catch (error) {
+      console.log(error)
+    }
+  }
   return (
     <View style={{padding: 15}}>
       <View
@@ -27,9 +39,9 @@ const CommentsGola = () => {
             alignItems: 'center',
             width: '70%',
           }}>
-          <Image
+            {value?.Author?.ProfilePic ? <Image
             source={{
-              uri: 'https://www.epicscotland.com/wp-content/uploads/2018/01/Business-Headshot_002.jpg',
+              uri: value?.Author?.ProfilePic,
             }}
             style={{
               width: 40,
@@ -38,10 +50,20 @@ const CommentsGola = () => {
               resizeMode: 'cover',
               marginRight: 10,
             }}
-          />
+          />:  <Image
+          source={require("../images/dummyUser.png")}
+          style={{
+            width: 40,
+            borderRadius: 20,
+            height: 40,
+            resizeMode: 'cover',
+            marginRight: 10,
+          }}
+        />}
+         
           <View>
             <Text style={{color: 'black', fontSize: 11, fontWeight: '500'}}>
-              shubham16
+              {value?.Author?.FullName}
             </Text>
             <Text
               style={{
@@ -50,30 +72,35 @@ const CommentsGola = () => {
                 marginVertical: 3,
                 fontWeight: '400',
               }}>
-              All the best jsdhf sidufhsd fisduhgdfg All the best jsdhf sidufhsd
-              fisduhgdfg{' '}
+              {value?.Comment}
             </Text>
-            <Pressable onPress={() => setShowReplyBox(!showReplyBox)}>
+            {/* <Pressable onPress={() => setShowReplyBox(!showReplyBox)}>
               <Text style={{fontSize: 11, fontWeight: '500', color: 'gray'}}>
                 {showReplyBox ? 'Hide Reply' : 'View Reply'}
               </Text>
-            </Pressable>
+            </Pressable> */}
           </View>
         </View>
         <View>
-          <View style={{flexDirection: 'column', alignItems: 'center'}}>
-            <Image
-              source={{
-                uri: 'https://www.pngitem.com/pimgs/m/49-497821_instagram-like-icon-png-image-free-download-searchpng.png',
-              }}
+          <Pressable onPress={()=>handleCommentLike()} style={{flexDirection: 'column', alignItems: 'center'}}>
+            {value?.Likes.includes(globalState?.userData?._id) ? <Image
+              source={require("../images/redHeart.png")}
               style={{
                 width: 16,
                 height: 16,
                 resizeMode: 'cover',
               }}
-            />
-            <Text style={{fontSize: 9, fontWeight: '500'}}>165</Text>
-          </View>
+            />:<Image
+            source={require("../images/heart.png")}
+            style={{
+              width: 16,
+              height: 16,
+              resizeMode: 'cover',
+            }}
+          />}
+            
+            <Text style={{fontSize: 9, fontWeight: '500'}}>{value?.Likes?.length}</Text>
+          </Pressable>
         </View>
       </View>
       {showReplyBox && (
