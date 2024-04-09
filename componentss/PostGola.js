@@ -377,6 +377,9 @@ const PostGola = ({postValue}) => {
                 )}
               </Pressable>
               <Pressable
+              onPress={()=>Alert.alert(
+                'Feature under development. Stay tuned for updates.',
+              )}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',

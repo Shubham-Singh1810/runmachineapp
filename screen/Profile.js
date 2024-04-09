@@ -7,6 +7,7 @@ import {
   Button,
   Pressable,
   Modal,
+  Alert,
   ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
@@ -311,6 +312,9 @@ const Profile = () => {
             )}
 
             <Pressable
+            onPress={()=>Alert.alert(
+              'Feature under development. Stay tuned for updates.',
+            )}
               style={{
                 backgroundColor: 'whitesmoke',
                 elevation: 1,
