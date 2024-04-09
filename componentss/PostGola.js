@@ -6,15 +6,15 @@ import {
   Pressable,
   ActivityIndicator,
   Modal,
-  Alert
+  Alert,
 } from 'react-native';
 import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
 import {save_unsave_post, like_unlike_post} from '../services/user.services';
 import {useGlobalState} from '../GlobalProvider';
-import {getPostById} from '../services/post.services';
-import ToastManager, { Toast } from 'toastify-react-native'
+import {getPostById, deletePost} from '../services/post.services';
+import ToastManager, {Toast} from 'toastify-react-native';
 const PostGola = ({postValue}) => {
   const [value, setValue] = useState(postValue);
   const {globalState, setGlobalState} = useGlobalState();
@@ -74,6 +74,16 @@ const PostGola = ({postValue}) => {
     try {
       let response = await getPostById(value?._id);
       setValue(response?.data?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleDeletePost = async id => {
+    try {
+      let response = await deletePost(id);
+      if (response?.data?.status?.code == '200') {
+        Alert.alert('Post deleted successfully.');
+      }
     } catch (error) {
       console.log(error);
     }
@@ -218,18 +228,22 @@ const PostGola = ({postValue}) => {
                 }}
               />
             </Pressable>
-            <Pressable onPress={()=>Alert.alert("Feature under development. Stay tuned for updates.")}>
-            <Image
-              source={require('../images/send.png')}
-              style={{
-                width: 23,
-                height: 23,
-                resizeMode: 'cover',
-                marginRight: 20,
-              }}
-            />
+            <Pressable
+              onPress={() =>
+                Alert.alert(
+                  'Feature under development. Stay tuned for updates.',
+                )
+              }>
+              <Image
+                source={require('../images/send.png')}
+                style={{
+                  width: 23,
+                  height: 23,
+                  resizeMode: 'cover',
+                  marginRight: 20,
+                }}
+              />
             </Pressable>
-            
           </View>
           <Pressable onPress={handleSave}>
             {value?.SavedBy.includes(globalState?.userData?._id) ? (
@@ -258,7 +272,7 @@ const PostGola = ({postValue}) => {
           <Text style={{color: 'black'}}>{value?.Likes?.length} likes</Text>
           <View style={{flexDirection: 'row'}}>
             <Text style={{color: 'black', fontWeight: '500'}}>
-              Shubham_Singh
+              {value?.Author?.FullName}
             </Text>
             <Text style={{color: 'black', fontWeight: '400', marginLeft: 5}}>
               {value?.Caption}
@@ -319,18 +333,80 @@ const PostGola = ({postValue}) => {
                 {message?.text}
               </Text>
             )}
-            <View style={{flexDirection:"row", justifyContent:"space-between"}}>
-            <Pressable
-              onPress={handleSave}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 17,
-              }}>
-              {value?.SavedBy.includes(globalState?.userData?._id) ? (
-                <View style={{flexDirection: 'row'}}>
+            <View
+              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+              <Pressable
+                onPress={handleSave}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 17,
+                }}>
+                {value?.SavedBy.includes(globalState?.userData?._id) ? (
+                  <View style={{flexDirection: 'row'}}>
+                    <Image
+                      source={require('../images/bookmark.png')}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        marginRight: 5,
+                        resizeMode: 'cover',
+                      }}
+                    />
+                    <Text
+                      style={{fontWeight: '400', color: 'black', fontSize: 16}}>
+                      Saved
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{flexDirection: 'row'}}>
+                    <Image
+                      source={require('../images/saveIcon.png')}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        marginRight: 5,
+                        resizeMode: 'cover',
+                      }}
+                    />
+                    <Text
+                      style={{fontWeight: '400', color: 'black', fontSize: 16}}>
+                      Save
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 17,
+                }}>
+                <Image
+                  source={require('../images/send.png')}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    marginRight: 5,
+                    resizeMode: 'cover',
+                  }}
+                />
+                <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
+                  Share
+                </Text>
+              </Pressable>
+              {globalState?.userData?._id != value?.Author?._id && (
+                <Pressable
+                  onPress={() =>
+                    navigation.navigate('Profile', {userId: value?.Author?._id})
+                  }
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 17,
+                  }}>
                   <Image
-                    source={require('../images/bookmark.png')}
+                    source={require('../images/add.png')}
                     style={{
                       width: 20,
                       height: 20,
@@ -340,93 +416,38 @@ const PostGola = ({postValue}) => {
                   />
                   <Text
                     style={{fontWeight: '400', color: 'black', fontSize: 16}}>
-                    Saved
+                    {globalState?.userData?.Followings?.includes(
+                      value?.Author?._id,
+                    )
+                      ? 'Following'
+                      : 'Follow'}
                   </Text>
-                </View>
-              ) : (
-                <View style={{flexDirection: 'row'}}>
-                  <Image
-                    source={require('../images/saveIcon.png')}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      marginRight: 5,
-                      resizeMode: 'cover',
-                    }}
-                  />
-                  <Text
-                    style={{fontWeight: '400', color: 'black', fontSize: 16}}>
-                    Save
-                  </Text>
-                </View>
+                </Pressable>
               )}
-            </Pressable>
-            <Pressable
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 17,
-              }}>
-              <Image
-                source={require('../images/send.png')}
-                style={{
-                  width: 20,
-                  height: 20,
-                  marginRight: 5,
-                  resizeMode: 'cover',
-                }}
-              />
-              <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
-                Share
-              </Text>
-            </Pressable>
-            {globalState?.userData?._id != value?.Author?._id && (
-              <Pressable
-              onPress={()=>navigation.navigate('Profile', {userId: value?.Author?._id})}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 17,
-                }}>
-                <Image
-                  source={require('../images/add.png')}
+              {globalState?.userData?._id == value?.Author?._id && (
+                <Pressable
+                  onPress={() => handleDeletePost(value?._id)}
                   style={{
-                    width: 20,
-                    height: 20,
-                    marginRight: 5,
-                    resizeMode: 'cover',
-                  }}
-                />
-                <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
-                {globalState?.userData?.Followings?.includes(value?.Author?._id)
-                ? 'Following'
-                : 'Follow'}
-                </Text>
-              </Pressable>
-            )}
-            {globalState?.userData?._id == value?.Author?._id && (
-              <Pressable
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 17,
-                }}>
-                <Image
-                  source={require('../images/delete.png')}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    marginRight: 5,
-                    resizeMode: 'cover',
-                  }}
-                />
-                <Text style={{fontWeight: '400', color: 'black', fontSize: 16}}>
-                  Delete
-                </Text>
-              </Pressable>
-            )}
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 17,
+                  }}>
+                  <Image
+                    source={require('../images/delete.png')}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      marginRight: 5,
+                      resizeMode: 'cover',
+                    }}
+                  />
+                  <Text
+                    style={{fontWeight: '400', color: 'black', fontSize: 16}}>
+                    Delete
+                  </Text>
+                </Pressable>
+              )}
             </View>
-            
           </Pressable>
         </Pressable>
       </Modal>
@@ -442,7 +463,7 @@ const PostGola = ({postValue}) => {
           {/* <ActivityIndicator size="large" /> */}
         </View>
       </Modal>
-      <ToastManager/>
+      <ToastManager />
     </View>
   );
 };

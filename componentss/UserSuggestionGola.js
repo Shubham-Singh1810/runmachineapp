@@ -6,7 +6,8 @@ const UserSuggestionGola = ({value}) => {
   const {globalState, setGlobalState} = useGlobalState();
   const navigation = useNavigation();
   return (
-    <View
+    <Pressable
+      onPress={() => navigation.navigate('Profile', {userId: value?._id})}
       style={{
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -50,10 +51,7 @@ const UserSuggestionGola = ({value}) => {
             ? value?.FullName.substring(0, 12) + '...'
             : value?.FullName}
         </Text>
-        <Pressable
-        onPress={() =>
-          navigation.navigate('Profile', {userId: value?._id})
-        }
+        <View
           style={{
             backgroundColor: '#becce5',
             flexDirection: 'row',
@@ -62,13 +60,13 @@ const UserSuggestionGola = ({value}) => {
             paddingVertical: 2,
           }}>
           <Text style={{color: 'black', fontWeight: '500'}}>
-          {globalState?.userData?.Followings?.includes(value?.Author?._id)
-                ? 'Following'
-                : 'Follow'}
+            {globalState?.userData?.Followings?.includes(value?._id)
+              ? 'Following'
+              : 'Follow'}
           </Text>
-        </Pressable>
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
